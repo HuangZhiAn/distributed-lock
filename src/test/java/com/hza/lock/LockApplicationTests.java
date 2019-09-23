@@ -6,6 +6,9 @@ import com.hza.lock.mysql.MysqlLockImpl;
 import com.hza.lock.service.LockResourceService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.redisson.RedissonLock;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -24,6 +27,8 @@ public class LockApplicationTests {
 
     @Autowired
     private LockResourceMapper lockResourceMapper;
+    @Autowired
+    private RedissonClient redissonClient;
 
     private int c = 0;
     private String addr = null;
@@ -37,19 +42,54 @@ public class LockApplicationTests {
         }
         for (int i = 0; i < 2; i++) {
             new Thread(() -> {
-                LockResource lockResource = new LockResource();
-                lockResource.setResourceName("a123");
-                lockResource.setNodeInfo(addr + "-" + Thread.currentThread().getId() + "");
-                lockResource.setCount(1L);
-                MysqlLockImpl mysqlLock = new MysqlLockImpl(lockResource, lockResourceService);
+                MysqlLockImpl mysqlLock = new MysqlLockImpl("a123", lockResourceService);
                 boolean ret  = false;
                 ret = mysqlLock.tryLock(1L, TimeUnit.SECONDS);
                 if(ret){
                     c += 3;
-                    System.out.println(Thread.currentThread().getId() + "aaaaa-" + c);
+                    System.out.println(Thread.currentThread().getId() + "-aaaaa-" + c);
                     c -= 3;
                 }
                 mysqlLock.unlock();
+            }).start();
+        }
+        try {
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void redissonLock() {
+        /*for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                RLock lock = redissonClient.getLock("a123");
+                lock.lock();
+                lock.lock();
+                c += 3;
+                System.out.println(lock.getHoldCount() + "-aaaaa-" + c);
+                c -= 3;
+                lock.unlock();
+                lock.unlock();
+            }).start();
+        }*/
+        for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                RLock lock = redissonClient.getLock("a123");
+                boolean ret = false;
+                try {
+                    ret = lock.tryLock(1000L, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if(ret){
+                    c += 3;
+                    System.out.println(lock.getHoldCount() + "-aaaaa-" + c);
+                    c -= 3;
+                    lock.unlock();
+                }
+
             }).start();
         }
         try {

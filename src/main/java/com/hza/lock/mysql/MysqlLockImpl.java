@@ -5,6 +5,8 @@ import com.hza.lock.service.LockResourceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -16,6 +18,21 @@ public class MysqlLockImpl implements Lock {
     private LockResourceService lockResourceService;
 
     public MysqlLockImpl(LockResource lockResource, LockResourceService lockResourceService) {
+        this.lockResource = lockResource;
+        this.lockResourceService = lockResourceService;
+    }
+
+    public MysqlLockImpl(String name, LockResourceService lockResourceService) {
+        LockResource lockResource = new LockResource();
+        lockResource.setCount(1L);
+        String addr = null;
+        try {
+            addr = InetAddress.getLocalHost().getHostAddress();//获得本机IP
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        lockResource.setNodeInfo(addr);
+        lockResource.setResourceName(name);
         this.lockResource = lockResource;
         this.lockResourceService = lockResourceService;
     }
