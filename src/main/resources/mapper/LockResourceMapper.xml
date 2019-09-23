@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hza.lock.mapper.LockResourceMapper">
+
+	<!-- 可根据自己的需求，是否要使用 -->
+    <resultMap id="BaseResultMap" type="com.hza.lock.entity.LockResource">
+        <result column="id" property="id" jdbcType="DECIMAL"/>
+        <result column="resource_name" property="resourceName" jdbcType="VARCHAR"/>
+        <result column="count" property="count" jdbcType="DECIMAL"/>
+        <result column="node_info" property="nodeInfo" jdbcType="VARCHAR"/>
+        <result column="desc" property="desc" jdbcType="VARCHAR"/>
+        <result column="create_date" property="createDate" jdbcType="DATE"/>
+        <result column="update_date" property="updateDate" jdbcType="DATE"/>
+    </resultMap>
+
+
+</mapper>

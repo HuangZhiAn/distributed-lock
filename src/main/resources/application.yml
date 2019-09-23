@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: lock
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/hap_dev?useUnicode=true&characterEncoding=utf-8&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:hap_dev}
+    password: ${SPRING_DATASOURCE_PASSWORD:hap_dev}
+    max-active: 200
+    max-wait: 60000
+    min-idle: 10
+  redis:
+    host: ${SPRING_REDIS_HOST:127.0.0.1}
+    port: 6379
+    database: 1
+
+mybatis:
+  mapperLocations: classpath*:/mapper/*.xml
+  configuration:
+    mapUnderscoreToCamelCase: true
+
+#logging:
+#  level:
+#    com.hza.lock.mapper: DEBUG
