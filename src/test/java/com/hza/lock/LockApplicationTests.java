@@ -3,6 +3,7 @@ package com.hza.lock;
 import com.hza.lock.entity.LockResource;
 import com.hza.lock.mapper.LockResourceMapper;
 import com.hza.lock.mysql.MysqlLockImpl;
+import com.hza.lock.redis.RedisLockImpl;
 import com.hza.lock.service.LockResourceService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,6 +13,7 @@ import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import redis.clients.jedis.Jedis;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -126,6 +128,18 @@ public class LockApplicationTests {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void redisLockTest() {
+        Jedis jedis = new Jedis("127.0.0.1",6379);
+        RedisLockImpl redisLock = new RedisLockImpl("a123",jedis);
+        boolean b = redisLock.tryLock();
+        redisLock.unlock();
+        boolean c = redisLock.tryLock();
+        //redisLock.unlock();
+        boolean d = redisLock.tryLock();
+        System.out.println(b+":"+c+":"+d);
     }
 
 }
