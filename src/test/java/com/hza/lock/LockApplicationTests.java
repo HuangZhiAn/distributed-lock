@@ -5,6 +5,11 @@ import com.hza.lock.mapper.LockResourceMapper;
 import com.hza.lock.mysql.MysqlLockImpl;
 import com.hza.lock.redis.RedisLockImpl;
 import com.hza.lock.service.LockResourceService;
+import org.apache.curator.RetryPolicy;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
+import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.redisson.RedissonLock;
@@ -182,7 +187,7 @@ public class LockApplicationTests {
                 RedisLockImpl redisLock = new RedisLockImpl("a123", jedis);
                 boolean b = false;
                 b = redisLock.tryLock();
-                if(b){
+                if (b) {
                     c += 3;
                     try {
                         Thread.sleep(100L);
@@ -217,5 +222,79 @@ public class LockApplicationTests {
         result = jedis.eval(script, Collections.singletonList("a123"), Collections.singletonList(""));*/
         redisLock.lock();
         redisLock.unlock();
+    }
+
+    @Test
+    public void zookeeperLockTest() {
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+        //CuratorFramework client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
+        CuratorFramework client = CuratorFrameworkFactory.builder().connectString("localhost:2181")
+                .sessionTimeoutMs(1000)    // 连接超时时间
+                .connectionTimeoutMs(1000) // 会话超时时间
+                // 刚开始重试间隔为1秒，之后重试间隔逐渐增加，最多重试不超过三次
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+                .build();
+        client.start();
+        //创建分布式锁, 锁空间的根节点路径为/curator/lock
+        InterProcessMutex mutex = new InterProcessMutex(client, "/curator/lock");
+        try {
+            mutex.acquire();
+            mutex.acquire();
+            //获得了锁, 进行业务流程
+            System.out.println("Enter mutex");
+            //完成业务流程, 释放锁
+            mutex.release();
+            mutex.release();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            //关闭客户端
+            client.close();
+        }
+    }
+
+    @Test
+    public void zookeeperLockTest2() {
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
+        //CuratorFramework client = CuratorFrameworkFactory.newClient("localhost:2181", retryPolicy);
+        CuratorFramework client = CuratorFrameworkFactory.builder().connectString("localhost:2181")
+                .sessionTimeoutMs(1000)    // 连接超时时间
+                .connectionTimeoutMs(1000) // 会话超时时间
+                // 刚开始重试间隔为1秒，之后重试间隔逐渐增加，最多重试不超过三次
+                .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+                .build();
+        client.start();
+        for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                //创建分布式锁, 锁空间的根节点路径为/curator/lock
+                InterProcessMutex mutex = new InterProcessMutex(client, "/curator/lock");
+                try {
+                    mutex.acquire();
+                    //获得了锁, 进行业务流程
+                    c += 3;
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(Thread.currentThread().getId() + "-aaaaa-" + c);
+                    c -= 3;
+                    //完成业务流程, 释放锁
+                    mutex.release();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+            try {
+                Thread.sleep(200L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            System.in.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
