@@ -74,7 +74,7 @@ public class MysqlLockImpl implements Lock {
                     return true;
                 }
             }catch (Exception e){
-                System.out.println(e.getLocalizedMessage());
+                //System.out.println(e.getLocalizedMessage());
             }
             try {
                 Thread.sleep(100);
